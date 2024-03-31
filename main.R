@@ -3,7 +3,7 @@ library(stringr)
 library(magrittr)
 
 vars = Sys.getenv(c("MAX_DEPTH", "MAX_PAGES", "START_URL"), unset = NA)
-MAX_DEPTH = ifelse(!is.na(vars["MAX_DEPTH"]), as.numeric(vars["MAX_DEPTH"]), 3)
+MAX_DEPTH = ifelse(!is.na(vars["MAX_DEPTH"]), as.numeric(vars["MAX_DEPTH"]), 5)
 MAX_PAGES = ifelse(!is.na(vars["MAX_PAGES"]), as.numeric(vars["MAX_PAGES"]), 10)
 START_URL = ifelse(!is.na(vars["START_URL"]), vars["START_URL"], "/wiki/Philosophy")
 
@@ -24,7 +24,6 @@ get_article_links <- function(article) {
         str_subset("^/wiki/.*$")
 }
 
-
 while (length(unvisited) > 0 && length(visited) <= MAX_PAGES) {
     # Pop off unvisited
     current <- head(unvisited, 1)
@@ -38,13 +37,17 @@ while (length(unvisited) > 0 && length(visited) <= MAX_PAGES) {
       html_elements(css = "title") %>% 
       html_text2
     if (!(title %in% visited)) {
-        print(title)
         # If depth < MAX_DEPTH add links to 
         # head of unvisited
         if (depth < MAX_DEPTH) {
-            to_visit <- page %>% 
-                get_article %>% 
+            print(title)
+            article <- page %>% 
+                get_article
+            to_visit <- article %>% 
                 get_article_links
+            body <- article %>% 
+              html_elements(css = "p") %>%
+              html_text2
             unvisited <- append(
               unvisited,
               lapply(to_visit, function(url){list(url = url, depth = depth + 1)}),
